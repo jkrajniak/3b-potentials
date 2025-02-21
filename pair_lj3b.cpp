@@ -40,7 +40,7 @@ PairLJ3B::PairLJ3B(LAMMPS *lmp) : Pair(lmp)
 {
   single_enable = 0;
   restartinfo = 0;
-  one_coeff = 1;
+  one_coeff = 0;
   manybody_flag = 1;
   centroidstressflag = CENTROID_NOTAVAIL;
   unit_convert_flag = utils::get_supported_conversions(utils::ENERGY);
@@ -126,6 +126,10 @@ void PairLJ3B::compute(int eflag, int vflag)
 
       jtype = map[type[j]];
       ijparam = elem3param[itype][jtype][jtype];
+      if (ijparam == -1) {
+        // skip, no interaction
+        continue;
+      }
       if (rsq >= params[ijparam].cutsq) {
         continue;
       } else {
@@ -166,6 +170,10 @@ void PairLJ3B::compute(int eflag, int vflag)
       j = neighshort[jj];
       jtype = map[type[j]];
       ijparam = elem3param[itype][jtype][jtype];
+      if (ijparam == -1) {
+        // skip, no interaction
+        continue;
+      }
       if (params[ijparam].flagoffset == 1 ) {
 	 continue;
       }
@@ -181,11 +189,19 @@ void PairLJ3B::compute(int eflag, int vflag)
         k = neighshort[kk];
         ktype = map[type[k]];
         ikparam = elem3param[itype][ktype][ktype];
+        if (ikparam == -1) {
+          // skip, no interaction
+          continue;
+        }
         ijkparam = elem3param[itype][jtype][ktype];
-	// skip for lambda equals to zero
-	if (params[ijkparam].lambda <= 0.00001 ) {
-	   continue;
-	}
+        if (ijkparam == -1) {
+          // skip, no interaction
+          continue;
+        }
+        // skip for lambda equals to zero
+        if (params[ijkparam].lambda <= 0.00001 ) {
+          continue;
+        }
         delr2[0] = x[k][0] - xtmp;
         delr2[1] = x[k][1] - ytmp;
         delr2[2] = x[k][2] - ztmp;
@@ -409,7 +425,6 @@ void PairLJ3B::setup_params()
             n = m;
           }
         }
-        if (n < 0) error->all(FLERR,"Potential file is missing an entry");
         elem3param[i][j][k] = n;
       }
 
