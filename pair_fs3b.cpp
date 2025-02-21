@@ -40,7 +40,7 @@ PairFS3B::PairFS3B(LAMMPS *lmp) : Pair(lmp)
 {
   single_enable = 0;
   restartinfo = 0;
-  one_coeff = 1;
+  one_coeff = 0;
   manybody_flag = 1;
   centroidstressflag = CENTROID_NOTAVAIL;
   unit_convert_flag = utils::get_supported_conversions(utils::ENERGY);
@@ -127,6 +127,9 @@ void PairFS3B::compute(int eflag, int vflag)
 
       jtype = map[type[j]];
       ijparam = elem3param[itype][jtype][jtype];
+      if (ijparam == -1) {
+        continue;
+      }
       if (rsq >= params[ijparam].cutsq) {
         continue;
       } else {
@@ -167,6 +170,9 @@ void PairFS3B::compute(int eflag, int vflag)
       j = neighshort[jj];
       jtype = map[type[j]];
       ijparam = elem3param[itype][jtype][jtype];
+      if (ijparam == -1) {
+        continue;
+      }
       if (params[ijparam].flagoffset == 1 ) {
          continue;
       }
@@ -182,7 +188,13 @@ void PairFS3B::compute(int eflag, int vflag)
         k = neighshort[kk];
         ktype = map[type[k]];
         ikparam = elem3param[itype][ktype][ktype];
+        if (ikparam == -1) {
+          continue;
+        }
         ijkparam = elem3param[itype][jtype][ktype];
+        if (ijkparam == -1) {
+          continue;
+        }
         // skip for lambda equals to zero
         if (params[ijkparam].lambda <= 0.00001 ) {
            continue;
@@ -414,7 +426,6 @@ void PairFS3B::setup_params()
             n = m;
           }
         }
-        if (n < 0) error->all(FLERR,"Potential file is missing an entry");
         elem3param[i][j][k] = n;
       }
 
